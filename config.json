@@ -1,0 +1,120 @@
+{
+  "name": "WeeklyGoalReport",
+
+  "namespace":"Stanford\\WeeklyGoalReport",
+
+  "description": "Weekly goal report for Impact project",
+
+    "authors": [
+    {
+      "name": "Jae Lee",
+      "email": "jael@stanford.edu",
+      "institution": "Stanford University"
+    }
+  ],
+  "permissions": [
+    "hook_save_record"
+  ],
+
+  "links": {
+    "control-center": [
+    ],
+    "project": [
+      {
+        "name": "Generate Report for Weekly Goals",
+        "icon": "gear",
+        "url": "GenerateReport.php"
+      }
+    ]
+  },
+
+  "no-auth-pages": [
+  ],
+
+  "system-settings": [
+    {
+      "key": "enable-system-debug-logging",
+      "name": "<b>Enable Debug Logging (system-wide)</b>",
+      "required": false,
+      "type": "checkbox"
+    }
+
+  ],
+
+  "project-settings": [
+    {
+      "key": "enable-project-debug-logging",
+      "name": "<b>Enable Debug Logging</b>",
+      "required": false,
+      "type": "checkbox"
+    },
+    {
+      "key": "survey_pid",
+      "name": "SURVEY_PID: project id of the survey project",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "participant_event_arm_name",
+      "name": "PARTICIPANT_EVENT_ARM_NAME: event where the participant data are stored",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "start_date_field",
+      "name": "START_DATE_FIELD",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "end_date_field",
+      "name": "END_DATE_FIELD",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "withdrawn_status_field",
+      "name": "WITHDRAWN_STATUS_FIELD",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "group_field",
+      "name": "GROUP_FIELD: exercise group (1x, 3x, etc)",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "survey_event_arm_name",
+      "name": "SURVEY_EVENT_ARM_NAME: event where the surveys are stored",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "survey_pk_field",
+      "name": "SURVEY_PK_FIELD: name of pk of survey form",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "survey_fk_field",
+      "name": "SURVEY_FK_FIELD: name of field in survey form where the participant ID is stored",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "survey_timestamp_field",
+      "name": "SURVEY_TIMESTAMP_FIELD",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "survey_date_field",
+      "name": "SURVEY_DATE_FIELD",
+      "required":true,
+      "type": "text"
+    }
+
+
+  ]
+}
