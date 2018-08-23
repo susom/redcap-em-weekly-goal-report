@@ -2,8 +2,18 @@
 namespace Stanford\WeeklyGoalReport;
 /** @var \Stanford\WeeklyGoalReport\WeeklyGoalReport $module */
 
-use \REDCap as REDCap;
-use \Plugin as Plugin;
+/**
+ * From Myo Wong email : July 30, 2018
+ * Overall Weekly Adherence:  We will need to break down the adherence for each week - we can use an if and then
+ * statement. A few examples are provided in the attached excel sheet. For 1x/week, it should be 1 if (attended
+ * sessions >=1). For 3x/week, it should be 3 if (attended sessions >=3). For this report, if they are going more
+ * than their assigned weekly sessions, it would be capped at the max exercise session for their group.
+ *
+ * 5 week adherence: Will use the same logic/formula as the Overall weekly adherence, but will just look at
+ * Current week and the last 4 weeks (current_week_# - 1, current_week_# - 2 until current_week_# - 4).
+ */
+
+
 use \DateTime as DateTime;
 
 //include "common.php";
