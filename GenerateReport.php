@@ -105,7 +105,8 @@ foreach ($participants as $participant) {
     $actual_attendance = $survey_data[$participant]['count'];
 
     //total count over expected
-    $percent_formatter = new \NumberFormatter('en_US', \NumberFormatter::PERCENT);
+    //TODO: php intl extension not enabled in dev machine?
+    //$percent_formatter = new \NumberFormatter('en_US', \NumberFormatter::PERCENT);
     $overall_adherence = $actual_attendance / ($total_week * $multiplier);
     $count_weeks = count($counts[$participant]);
     $count_attendance = array_sum(array_column($counts[$participant],'capped_count'));
@@ -122,11 +123,14 @@ foreach ($participants as $participant) {
     $table_data[$participant]['total_weeks']                  = $total_week;
     $table_data[$participant]['expected_attendance']          = $total_week * $multiplier;
     $table_data[$participant]['actual_attendance']            = $actual_attendance;
-    $table_data[$participant]['overall_adherence']            = $percent_formatter->format($overall_adherence);
+    //$table_data[$participant]['overall_adherence']            = $percent_formatter->format($overall_adherence);
+    $table_data[$participant]['overall_adherence']            = sprintf("%.2f%%", $overall_adherence * 100);
     $table_data[$participant]['count']                        = $count_attendance;
-    $table_data[$participant]['weekly_adherence']             =  $percent_formatter->format($weekly_adherence);
+    //$table_data[$participant]['weekly_adherence']             =  $percent_formatter->format($weekly_adherence);
+    $table_data[$participant]['weekly_adherence']             = sprintf("%.2f%%", $weekly_adherence * 100);
     $table_data[$participant]['five_week_count']              = $five_wk_count;
-    $table_data[$participant]['five_week_adherence']          = $percent_formatter->format($five_wk_adherence);
+    //$table_data[$participant]['five_week_adherence']          = $percent_formatter->format($five_wk_adherence);
+    $table_data[$participant]['five_week_adherence']          = sprintf("%.2f%%", $five_wk_adherence * 100);
 
 
 }
