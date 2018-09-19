@@ -300,7 +300,7 @@ EOD;
     }
 
     public function getDateDiffWeeks($startDate, $endDate) {
-        if($startDate > $endDate) return getDateDiffWeeks($endDate, $startDate);
+        //if($startDate > $endDate) return getDateDiffWeeks($endDate, $startDate);
         $interval = $startDate->diff($endDate);
         $diff = floor(($interval->days) / 7);
         return $diff;
