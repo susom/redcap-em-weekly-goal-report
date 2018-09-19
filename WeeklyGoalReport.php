@@ -300,12 +300,13 @@ EOD;
     }
 
     public function getDateDiffWeeks($startDate, $endDate) {
+        if($startDate > $endDate) return datediffInWeeks($endDate, $startDate);
         $interval = $startDate->diff($endDate);
-
         $diff = floor(($interval->days) / 7);
-
         return $diff;
     }
+
+
 
     public function dumpResource($name) {
         $file =  $this->getModulePath() . $name;

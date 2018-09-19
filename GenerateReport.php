@@ -101,16 +101,31 @@ foreach ($participants as $participant) {
         $current_week = $module->getDateDiffWeeks($begin, $today);
     }
 
+    //if current week is not set (completed), use Total Weeks (completed)
+    $multiplier_week =  ($current_week == '') ?  $total_week : $current_week;
+
     //todo: check with myo. Report total count of surveys as actual Attendance
     $actual_attendance = $survey_data[$participant]['count'];
+    //$module->emLog($survey_data[$participant], 'SURVEY DATA PARTICIPANT');
+    //$module->emLog($counts[$participant], 'counts participant for ' .$participant);
+
+    //$module->emLog('start is '.$start_date. ' week '.$begin->format('Y_W'));
+    //$module->emLog('today is '. $today. ' week '.$today->format('Y_W'));
+
+
 
     //total count over expected
     //TODO: php intl extension not enabled in dev machine?
     //$percent_formatter = new \NumberFormatter('en_US', \NumberFormatter::PERCENT);
-    $overall_adherence = $actual_attendance / ($total_week * $multiplier);
+    $overall_adherence = $actual_attendance / ($multiplier_week * $multiplier);
     $count_weeks = count($counts[$participant]);
-    $count_attendance = array_sum(array_column($counts[$participant],'capped_count'));
-    $weekly_adherence = $count_attendance / ($count_weeks * $multiplier);
+
+    //$capped_count = array_sum(array_column($counts[$participant],'capped_count'));
+
+    //make sure capped count is constrained by the start and end date
+    $capped_current_attendance = currentAttended($counts[$participant], $begin, $today);
+    $weekly_adherence = $capped_current_attendance / ($multiplier_week * $multiplier);
+
     $five_wk_count = lastFiveAttended($counts[$participant]);
     $five_wk_adherence = $five_wk_count / (5 * $multiplier); //sometimes not 5 yet attendended
 
@@ -121,26 +136,71 @@ foreach ($participants as $participant) {
     $table_data[$participant][$cfg['END_DATE_FIELD']]         = $end_date;
     $table_data[$participant]['current_week']                 = $current_week;
     $table_data[$participant]['total_weeks']                  = $total_week;
-    $table_data[$participant]['expected_attendance']          = $total_week * $multiplier;
-    $table_data[$participant]['actual_attendance']            = $actual_attendance;
+    $table_data[$participant]['expected_attendance']          = $multiplier_week * $multiplier ;
+
+
+    //$table_data[$participant]['capped_current_attendance']    = $capped_current_attendance;
+
+    $table_data[$participant]['current_attendance']           = $actual_attendance;  //actual over current week
     //$table_data[$participant]['overall_adherence']            = $percent_formatter->format($overall_adherence);
     $table_data[$participant]['overall_adherence']            = sprintf("%.2f%%", $overall_adherence * 100);
-    $table_data[$participant]['count']                        = $count_attendance;
+
+    $table_data[$participant]['count']                        = $capped_current_attendance; //capped
     //$table_data[$participant]['weekly_adherence']             =  $percent_formatter->format($weekly_adherence);
     $table_data[$participant]['weekly_adherence']             = sprintf("%.2f%%", $weekly_adherence * 100);
-    $table_data[$participant]['five_week_count']              = $five_wk_count;
+    $table_data[$participant]['70_adherence']                 = $weekly_adherence >= .7 ? 1 : 0;
+
+    $table_data[$participant]['five_week_count']              = $five_wk_count; //capped
     //$table_data[$participant]['five_week_adherence']          = $percent_formatter->format($five_wk_adherence);
     $table_data[$participant]['five_week_adherence']          = sprintf("%.2f%%", $five_wk_adherence * 100);
 
 
 }
 
+//$module->emLog($table_data, "table DATA");
+
+$sum_weekly_adherence = array_sum(array_column($table_data,'count'));
+$sum_expected_adherence = array_sum(array_column($table_data,'expected_attendance'));
+$sum_70_adherence = array_sum(array_column($table_data,'70_adherence'));
+$count_participant = count($table_data);
+$adherence_70_percent = sprintf("%.2f%%", ($sum_70_adherence/$count_participant) * 100);
+$adherence_weekly_percent = sprintf("%.2f%%", ($sum_weekly_adherence/$sum_expected_adherence) * 100);
+
+
 //$module->emDebug($table_data, "ALL TABLE DATA");
 
 $table_header = array("Participant","Withdraw Status","Arm","Start Date","End Date",
-    "Current Week", "Total Weeks", "Expected Attendance", "Actual Attendance", "Overall Adherence",
-    "counts", "Overall Weekly Adherence (count capped)", "5 week count", "5 week adherence" );
+    "Current Week", "Total Weeks", "Expected Attendance","Attendance Count", "Overall Adherence",
+    "Count of Attendance (capped)", "Overall Adherence (count capped)", "70% Weekly Adherence", "5 week Count (capped)", "5 week adherence" );
 
+
+/**
+ * Sum the capped attendance from start to current date
+ *
+ * @param $survey_data
+ * @DateTime $start_date
+ * @DateTime $end_date
+ */
+function currentAttended($survey_data, $begin, $end) {
+    global $module;
+    $sum_attended = 0;
+
+    //iterate over duration
+    //$module->emDebug("begin : ".$begin->format('Y_W')) ."/ end: ".$end->format('Y-W');
+    //echo "begin : ".$begin->format('Y-m-d') . "/ end: ".$end->format('Y-m-d-');
+
+    $daterange = new \DatePeriod($begin, new \DateInterval('P1W'), $end);
+
+    foreach($daterange as $date){
+        $yr_week = $date->format('Y_W');
+
+        $sum_attended += $survey_data[$yr_week]['capped_count'];
+    }
+
+    return $sum_attended;
+
+
+}
 
 function lastFiveAttended($survey_data) {
 
@@ -210,6 +270,19 @@ function renderSummaryTableRows($row_data) {
 
                     $rows .= '<td>' . $v . '</td>';
                     break;
+                case "70_adherence":
+
+                    switch ($v) {
+                        case '0':
+                            $v = 'No';
+                            break;
+                        case '1':
+                            $v = 'Yes';
+                            break;
+                    }
+
+                    $rows .= '<td>' . $v . '</td>';
+                    break;
                 default:
                     $rows .= '<td>' . $v . '</td>';
             }
@@ -254,7 +327,36 @@ function renderSummaryTableRows($row_data) {
 <body>
 <div class="container">
     <div class="jumbotron">
-        <h3>Weekly Goal Report</h3>
+        <h2>Weekly Goal Report</h2>
+        <table>
+            <tr>
+                <td>Count of Participants:</td>
+                <td>  <?php print $count_participant?></td>
+            </tr>
+
+            <tr>
+                <td>Sum of capped attendance (all participants):  </td>
+                <td>  <?php print $sum_weekly_adherence?></td>
+            </tr>
+            <tr>
+                <td>Sum of expected attendance (all participants):  </td>
+                <td>   <?php print $sum_expected_adherence?> </td>
+            </tr>
+            <tr>
+                <td> Average Weekly Adherence:  </td>
+                <td>  <?php print $adherence_weekly_percent?></td>
+            </tr>
+
+            <tr>
+                <td> Count of participants with 70% Weekly Adherence:  </td>
+                <td>  <?php print $sum_70_adherence?></td>
+            </tr>
+            <tr>
+                <td> Percent of participants with 70% Weekly Adherence :  </td>
+                <td>  <?php print $adherence_70_percent?> </td>
+            </tr>
+        </table>
+
     </div>
 </div>
 
@@ -266,7 +368,13 @@ function renderSummaryTableRows($row_data) {
 <script type = "text/javascript">
 
     $(document).ready(function(){
-        $('#summary').DataTable();
+
+        $('#summary').DataTable( {
+            buttons: [
+                'copy', 'excel', 'pdf'
+            ]
+        } );
+
     });
 
 </script>
