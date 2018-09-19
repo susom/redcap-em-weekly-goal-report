@@ -321,6 +321,10 @@ function renderSummaryTableRows($row_data) {
     <!--    <link href="--><?php //print $module->getUrl('css/datatables.min.css', false, true) ?><!--"  rel="stylesheet" type="text/css" media="screen,print"/>-->
     <style><?php echo $module->dumpResource('css/datatables.min.css'); ?></style>
 
+    <!--  Buttons
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-colvis-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/datatables.min.css"/>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/pdfmake-0.1.18/dt-1.10.13/b-1.2.4/b-colvis-1.2.4/b-flash-1.2.4/b-html5-1.2.4/b-print-1.2.4/datatables.min.js"></script>
+-->
 
     <!-- Add local css and js for module -->
 </head>
@@ -366,17 +370,14 @@ function renderSummaryTableRows($row_data) {
 </body>
 
 <script type = "text/javascript">
-
-    $(document).ready(function(){
-
+    $(document).ready(function() {
         $('#summary').DataTable( {
+            dom: 'Bfrtip',
             buttons: [
-                'copy', 'excel', 'pdf'
+                'copy', 'csv', 'excel', 'pdf', 'print'
             ]
         } );
-
-    });
-
+    } );
 </script>
 
 
