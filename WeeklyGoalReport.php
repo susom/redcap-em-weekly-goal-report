@@ -19,7 +19,9 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
         error_log(json_encode($obj));
     }
 
-    function getParticipantData($id=null, $cfg) {
+    function getParticipantData($id=null, $cfg, $withdrawn) {
+        global $module;
+
         // In the event the survey project is longitudinal, we need to use the event ID
         $survey_event_id = empty($cfg['PARTICIPANT_EVENT_ARM_NAME']) ? NULL : StaticUtils::getEventIdFromName($cfg['SURVEY_PID'], $cfg['PARTICIPANT_EVENT_ARM_NAME']);
         $survey_event_prefix = empty($cfg['PARTICIPANT_EVENT_ARM_NAME']) ? "" : "[" . $cfg['PARTICIPANT_EVENT_ARM_NAME'] . "]";
@@ -27,8 +29,21 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
         if ($id == null) {
             $filter = null; //get all ids
         } else {
-            $filter = $survey_event_prefix . "[{$cfg['SURVEY_FK_FIELD']}]='$id'";
+            $filter = $survey_event_prefix. "[{$cfg['SURVEY_FK_FIELD']}]='$id'";
+
         }
+
+        //if withdrawn checkbox is set, filter out withdrawn participants
+        if ($withdrawn) {
+            //
+            if ($id != null) {
+                $filter .= " AND ";
+            }
+            $filter .= $survey_event_prefix. "[{$cfg['WITHDRAWN_STATUS_FIELD']}(1)]<>'1'";
+
+            $module->emDebug($filter, 'FILTER SINCE WITHDRAWN');
+        }
+
 
         $get_data = array(
             $cfg['SURVEY_PK_FIELD'],

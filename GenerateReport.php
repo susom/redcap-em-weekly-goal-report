@@ -22,6 +22,11 @@ include_once("classes/StaticUtils.php");
 //get the project settings defined in the config.json file
 $cfg_orig  = $module->getProjectSettings($project_id);
 
+$withdrawn = false;
+if (isset($_POST['withdrawn'])){
+    $withdrawn = true;
+}
+
 //convert the $cfg into the version like the em
 /**
  * (
@@ -47,7 +52,7 @@ $cfg = convertConfigToArray($cfg_orig);
 ////////////////////////////////////////
 
 //0. Set up the participant level data
-$participant_data = WeeklyGoalReport::getParticipantData(null, $cfg);
+$participant_data = WeeklyGoalReport::getParticipantData(null, $cfg, $withdrawn);
 //rearrange so that the id is the key
 $participant_data = StaticUtils::makeFieldArrayKey($participant_data, $cfg['SURVEY_PK_FIELD']);
 //$module->emDebug($participant_data, "PARTICIPANT DATA");
@@ -78,6 +83,9 @@ foreach ($participants as $participant) {
     //reset values
     $total_week = '';
     $current_week = '';
+
+    //check on the withdrawn status of the participant
+
 
     //get multiplier (dependant on the exercise group that the participant was randomized into
     $group = $participant_data[$participant][$cfg['GROUP_FIELD']];
@@ -328,6 +336,13 @@ function renderSummaryTableRows($row_data) {
 <div class="container">
     <div class="jumbotron">
         <h2>Weekly Goal Report</h2>
+
+        <?php if ($withdrawn) {  ?>
+            <h4> These calculations EXCLUDE participants who have withdrawn.</h4>
+        <?php } else { ?>
+            <h4> These calculations INCLUDE participants who have withdrawn.</h4>
+        <?php } ?>
+
         <table>
             <tr>
                 <td>Count of Participants:</td>
@@ -356,6 +371,13 @@ function renderSummaryTableRows($row_data) {
                 <td>  <?php print $adherence_70_percent?> </td>
             </tr>
         </table>
+        <div class="checkbox">
+        <form action="#" method="post">
+            <input type="checkbox" name="withdrawn" id="withdrawn" value="true">Remove withdrawn participants from calculation. </input>
+            <input type="submit" name="submit" value="Recalculate"/>
+        </form>
+        </div>
+
 
     </div>
 </div>
@@ -373,6 +395,9 @@ function renderSummaryTableRows($row_data) {
                 'copy', 'csv', 'excel', 'pdf', 'print'
             ]
         } );
+
+        $( "#withdrawn" ).prop( "checked", <?php echo $withdrawn?> );
+
     } );
 </script>
 
