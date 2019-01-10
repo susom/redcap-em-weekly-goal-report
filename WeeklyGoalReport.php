@@ -3,20 +3,166 @@
 namespace Stanford\WeeklyGoalReport;
 /** @var \Stanford\WeeklyGoalReport\WeeklyGoalReport $module */
 
-use \Plugin as Plugin;
 use \REDCap as REDCap;
-use \Project as Project;
 use \DateTime as DateTime;
-use \Survey as Survey;
-use \LogicTester as LogicTester;
 
 
 class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
 
 
-    public static function debug($obj) {
-        // A really dumbed down logger for the template...
-        error_log(json_encode($obj));
+    /**
+     * There is a separate project that surveys absent week.
+     * Dates can overlap so make sure there is just ne entry
+     *
+     * @param $pid
+     * @return array
+     */
+    function getVacationData($pid) {
+        $vacation_fields = array('user_id',
+            'start_date_1', 'end_date_1', 'start_date_2', 'end_date_2', 'start_date_3', 'end_date_3',
+            'ill_start_date_1', 'ill_end_date_1', 'ill_start_date_2', 'ill_end_date_2', 'ill_start_date_3', 'ill_end_date_3',
+            'future_start_1', 'future_end_1', 'future_start_2', 'future_end_2', 'future_start_3', 'future_end_3');
+        $v = REDCap::getData($pid, 'json',null, $vacation_fields);
+        $vacation_data = json_decode($v, true);
+
+        //separate out vacation / illness / future vacation into separate arrays
+        $exclude_days = array();
+        foreach ($vacation_data as $key => $val) {
+
+            $exclude_days[$val['user_id']]['vacation'][$val['start_date_1']] = $val['end_date_1'];
+            $exclude_days[$val['user_id']]['vacation'][$val['start_date_2']] = $val['end_date_2'];
+            $exclude_days[$val['user_id']]['vacation'][$val['start_date_3']] = $val['end_date_3'];
+
+            $exclude_days[$val['user_id']]['illness'][$val['ill_start_date_1']] = $val['ill_end_date_1'];
+            $exclude_days[$val['user_id']]['illness'][$val['ill_start_date_2']] = $val['ill_end_date_2'];
+            $exclude_days[$val['user_id']]['illness'][$val['ill_start_date_3']] = $val['ill_end_date_3'];
+
+            $exclude_days[$val['user_id']]['future'][$val['future_start_1']] = $val['future_end_1'];
+            $exclude_days[$val['user_id']]['future'][$val['future_start_2']] = $val['future_end_2'];
+            $exclude_days[$val['user_id']]['future'][$val['future_start_3']] = $val['future_end_3'];
+        }
+
+        return $exclude_days;
+
+    }
+
+    function getExcludedWeeks($excluded_days, $vacation, $illness, $future_vacation) {
+        //convert this to exclude_weeks. list as weeks (like the Participant Data
+        $exclude_week = array();
+
+        foreach ($excluded_days as $id => $type ) {
+
+            $prefix = $this->getProjectSetting('survey_fk_prefix');
+
+            if (is_numeric($id)) {
+                $id = $prefix . str_pad($id, 4, '0', STR_PAD_LEFT);
+            }
+
+            //$this->emDebug($type, "TYPE for $id");
+
+            //if vacation is turned on, go through vacation in the arrays and add to list
+            if ($vacation) {
+                $exclude_week = $this->updateExcludedWeeks($exclude_week, $id, $type, 'vacation');
+            }
+            if ($illness) {
+                $exclude_week = $this->updateExcludedWeeks($exclude_week, $id, $type, 'illness');
+            }
+            if ($future_vacation) {
+                $exclude_week = $this->updateExcludedWeeks($exclude_week, $id, $type, 'future');
+            }
+
+        }
+
+        return $exclude_week;
+
+    }
+
+    function updateExcludedWeeks($exclude_week, $id, $type, $exclude = 'vacation') {
+
+        //cut off future dates here
+        $today = new DateTime();
+
+        foreach ($type[$exclude] as $start => $end) {
+            if ($start == null) continue;
+
+            $start_date = DateTime::createFromFormat('Y-m-d', $start);
+            $end_date = DateTime::createFromFormat('Y-m-d', $end);
+
+            if ($start_date > $today) {
+                //$this->emDebug($start_date . " is greater than today");
+                continue;
+            }
+            if ($end_date > $today) {
+                //$this->emDebug($end_date . " is greater than today. use today");
+                $end_date = $today;
+            }
+
+            $start_yearweek = $this->getYearWeekShiftedSunday($start_date);
+            $end_yearweek = $this->getYearWeekShiftedSunday($end_date);
+
+            for ($j = $start_yearweek; $j <= $end_yearweek; $j++){
+                $exclude_week[$id][$j] = $end_date->format('Y-m-d');
+            }
+        }
+
+        return $exclude_week;
+    }
+
+
+    /**
+     * Return date in YYYYWW format
+     * If date is Sunday push forward 1 week since default is M->Su and we want Su->Sa
+     *
+     * @param $date
+     * @return string
+     */
+    function getYearWeekShiftedSunday($date) {
+
+        $date_year = $date->format('Y');
+        $date_week = $date->format('W');
+
+        //if sunday push week forward by one since default is M->Su and we want Su->Sa
+        if ($date->format('w') == 0) {
+
+            if (date('W', strtotime($date->format('Y') . "-12-31")) == 52 and $date->format('W') == 52) {
+                $date_week = 1;
+                $date_year++;
+            } elseif (date('W', strtotime($date->format('Y') . "-12-31")) == 53 and $date->format('W') == 53) {
+                $date_week = 1;
+                $date_year++;
+            } else {
+                $date_week++;
+            }
+        }
+
+        return $date_year.$date_week;
+
+    }
+
+
+    function countAbsentWeeks($array1) {
+
+        $array = array_map(function($element){
+            return $element['absent'];
+        }, $array1);
+
+        $array2 = (array_count_values($array));
+
+        return $array2[1];
+        //return $array2;
+    }
+
+
+    function sumCappedCount($array1) {
+
+        $array = array_map(function($element){
+            return $element['capped_count'];
+        }, $array1);
+
+        $array2 = (array_sum($array));
+
+        //return $array2[1];
+        return $array2;
     }
 
     function getParticipantData($id=null, $cfg, $withdrawn) {
@@ -41,7 +187,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             }
             $filter .= $survey_event_prefix. "[{$cfg['WITHDRAWN_STATUS_FIELD']}(1)]<>'1'";
 
-            $module->emDebug($filter, 'FILTER SINCE WITHDRAWN');
+            //$module->emDebug($filter, 'FILTER SINCE WITHDRAWN');
         }
 
 
@@ -85,6 +231,16 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
         return $multiplier;
     }
 
+    /**
+     * Final summary table of all the counts (raw and capped) and absences by year_week
+     * Only includes data from start date to end date
+     *
+     * @param $survey_data
+     * @param $participant_data
+     * @param $cfg
+     * @return array
+     * @throws \Exception
+     */
      function calcCappedCount($survey_data, $participant_data, $cfg) {
         //table with columns : participant, year, weeknumber, count, capped count, randomization group?
         $capped  = array();
@@ -108,6 +264,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             //if start is blank then bail
             if ($start_str == '') {
 //                $this->emDebug("start is blank ".$start_str);
+                $this->emError("Start Date is missing for this participant: ".$participant);
                 continue;
             }
 
@@ -118,24 +275,62 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             if ($end > $today) {
                 $end = $today;
             }
+
+            //create interval by week, starting from the Sunday of the $start date
+            $start_sunday = $start;
+//            $this->emDebug("*****START IS ". $start->format('Y-m-d') . " WEEK : ". $start->format(YW) .
+//                " DAY OF WEEK : " . $start->format('l')  . " DAY OF WEEK : " . $start->format('w'));
+
+            //if start is not on sunday, shift it back to sunday
+            if ($start->format('w') != 0) {
+                $start_sunday = $start_sunday->modify('last Sunday');
+//                $this->emDebug("START_SUNAY IS ". $start_sunday->format('Y-m-d') ." WEEK : ".  $start_sunday->format(YW) .
+//                    " DAY OF WEEK IS : " . $start_sunday->format('l') . " DAY OF WEEK : " . $start_sunday->format('w'));
+            }
+
             $interval = new \DateInterval('P1W');
-            $period   = new \DatePeriod($start, $interval, $end);
+            $period   = new \DatePeriod($start_sunday, $interval, $end);
 
             //iterate over each week from start to end for this participant
             foreach ($period as $date) {
-                $c_yr = $date->format('Y');
-                $c_week = $date->format('W');
 
-                $raw_count = count($v[$c_yr][$c_week]);
+                $c_yrweek = $this->getYearWeekShiftedSunday($date);
+
+                $raw_count = count($v[$c_yrweek]);
                 $capped_count = ($raw_count > $cap) ? $cap : $raw_count ;
-//                $this->emDebug( $date->format('W') . " of ". $date->format('Y') . ' has count '.$raw_count);
-                $capped[$participant][$c_yr."_".$c_week]['raw_count'] = $raw_count;
-                $capped[$participant][$c_yr."_".$c_week]['capped_count'] = $capped_count;
 
+                $capped[$participant][$c_yrweek]['raw_count'] = $raw_count;
+                $capped[$participant][$c_yrweek]['capped_count'] = $capped_count;
+                $capped[$participant][$c_yrweek]['adhered'] = ($raw_count) >= $cap ? 1: 0;
             }
         }
-//        $this->emDebug($capped);
+
         return $capped;
+    }
+
+    /**
+     * From Lida: if absent, then the week is automatically counted as adhered.
+     *
+     * @param $counts
+     * @param $excluded_weeks
+     * @return mixed
+     */
+    function countWithAbsence($counts, $excluded_weeks) {
+        $amended_counts = $counts;
+        foreach ($counts as $participant => $count) {
+            foreach($count as $yearweek => $absences ) {
+                $absent =  isset($excluded_weeks[$participant][$yearweek]) ? 1 : 0;
+                $amended_counts[$participant][$yearweek]['absent'] = $absent;
+
+                //if they were absent then it gets counted as adhered.
+                $amended_counts[$participant][$yearweek]['absent_adhered'] =
+                    ($amended_counts[$participant][$yearweek]['adhered'] + $absent) > 0 ? 1 : 0;
+                //$this->emDebug("PARTICIPANT is $participant and year week is $yearweek");
+            }
+        }
+        //$this->emDebug($amended_counts); exit;
+
+        return $amended_counts;
     }
 
     /**
@@ -176,13 +371,15 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
         );
 
         $results = json_decode($q,true);
-        //Plugin::log($results, "DEBUG", "RESULTS");
         return $results;
     }
 
 
     /**
-     * TODO: check with Myo that week goes from Monday to Sunday (default)
+     * Week goes from Sunday to Saturday
+     *
+     * Return all the survey date by [participant_id][year_week] as key
+     *
      * @param $surveys
      * @param $key_field
      * @param $date_field
@@ -191,9 +388,20 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
     static function arrangeSurveyByIDWeek($surveys, $key_field, $date_field) {
         $r = array();
         foreach ($surveys as $d) {
-            $date = $d[$date_field];
+            $date = new DateTime($d[$date_field]);
 
-            $r[$d[$key_field]][self::getYear($date)][self::getWeek($date)][] = $d;
+            //do this by yearweek
+
+            $date_year = $date->format('Y');
+            $date_week = $date->format('W');
+
+            //default designation of week is Monday to Sunday, so If Sunday push to next week
+            if ($date->format('w') == 0) {
+                $date_week = $date_week + 1;
+            }
+
+            //$r[$d[$key_field]][self::getYear($date)][self::getWeek($date)][] = $d;
+            $r[$d[$key_field]][$date_year.$date_week][] = $d;
 
             //increment count of surveys
             $r[$d[$key_field]]['count'] += 1;
@@ -235,28 +443,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
     }
 
 
-    public static function getYear($pdate) {
-        //$date = DateTime::createFromFormat("Y-m-d", $pdate);
-        $foo = new \DateTime($pdate);
 
-        return $foo->format("Y");
-    }
-
-    public static function getMonth($pdate) {
-            $date = DateTime::createFromFormat("Y-m-d", $pdate);
-            return $date->format("m");
-        }
-
-    public static function getWeek($pdate) {
-        //$foo = DateTime::createFromFormat("Y-m-d", $pdate);
-        $foo = new \DateTime($pdate);
-        return $foo->format("W");
-    }
-
-    public static function getDay($pdate) {
-        $date = DateTime::createFromFormat("Y-m-d", $pdate);
-        return $date->format("d");
-    }
 
     function startBootstrapPage($title, $header = '') {
 

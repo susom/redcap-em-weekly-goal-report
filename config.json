@@ -52,7 +52,13 @@
       "key": "survey_pid",
       "name": "SURVEY_PID: project id of the survey project",
       "required":true,
-      "type": "text"
+      "type": "project-id"
+    },
+    {
+      "key": "vacation_pid",
+      "name": "VACATION_PID: project id of the Vacation / Illness project",
+      "required":true,
+      "type": "project-id"
     },
     {
       "key": "participant_event_arm_name",
@@ -100,6 +106,12 @@
       "key": "survey_fk_field",
       "name": "SURVEY_FK_FIELD: name of field in survey form where the participant ID is stored",
       "required":true,
+      "type": "text"
+    },
+    {
+      "key": "survey_fk_prefix",
+      "name": "SURVEY_FK_PREFIX: Participant prefix for ID. For example, for STRONG-D: '32113-'",
+      "required":false,
       "type": "text"
     },
     {
