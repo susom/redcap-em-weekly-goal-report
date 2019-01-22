@@ -507,6 +507,13 @@ EOD;
         //if($startDate > $endDate) return getDateDiffWeeks($endDate, $startDate);
         $interval = $startDate->diff($endDate);
         $diff = floor(($interval->days) / 7);
+
+        $day_of_week = $startDate->format('w');
+
+        //if starts on a sunday, add 1
+        if ($day_of_week=='0') {
+            $diff = $diff + 1;
+        }
         return $diff;
     }
 
