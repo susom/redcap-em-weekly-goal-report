@@ -183,7 +183,9 @@ foreach ($participants as $participant) {
 
     //make sure capped count is constrained by the start and end date
     $capped_current_attendance  = $module->sumCappedCount($counts[$participant]);
+
     $weekly_adherence = $capped_current_attendance / $expected_attendance;
+
 
     $five_wk_count = lastFiveAttended($counts[$participant]);
     $five_wk_adherence = lastFiveAdherence($counts[$participant]);

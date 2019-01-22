@@ -508,11 +508,25 @@ EOD;
         $interval = $startDate->diff($endDate);
         $diff = floor(($interval->days) / 7);
 
+        $today = new DateTime();
+
+        if ($startDate > $today) {
+            //$this->emDebug($startDate, "NOT YET STARTED RETURN NULL");
+            return null;
+        }
+
+        //if sunday, add 1
         $day_of_week = $startDate->format('w');
 
         //if starts on a sunday, add 1
         if ($day_of_week=='0') {
             $diff = $diff + 1;
+        }
+
+        //$this->emDebug($diff, $startDate, "START DATE");
+        //if it hasn't been a week yet, call it 1
+        if ($diff == 0) {
+            $diff =  1;
         }
         return $diff;
     }
