@@ -225,7 +225,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
                 $multiplier = 3;
                 break;
             default:
-                $multiplier = 1;
+                $multiplier = 3; //make default 3 since Strong  multiplier is 3 and no multiplier group
         }
 
         return $multiplier;

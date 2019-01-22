@@ -456,7 +456,7 @@ function renderSummaryTableRows($row_data) {
                 <td>Count of Participants:</td>
                 <td>  <?php print $count_participant ?></td>
             </tr>
-
+3
             <tr>
                 <td>Sum of capped attendance (all participants):</td>
                 <td>  <?php print $sum_weekly_adherence ?></td>
