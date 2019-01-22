@@ -263,7 +263,7 @@ $table_header = array(
     "Total Weeks",
     "Missed Weeks (due to vacation or illness)",
     "Considered Weeks (Total - Missed Weeks (if checked))",
-    "Expected Attendance (Counted Weeks * Multiplier)",
+    "Expected Attendance (Considered Weeks * Multiplier)",
     //"Attendance Count (All reported attendance)",
     //"Overall Adherence",
     "Count of Attendance (capped - constrained by weekly cap, start and end date)",
@@ -429,8 +429,7 @@ function renderSummaryTableRows($row_data) {
 
     <!-- Include DataTables for Bootstrap -->
     <script src="<?php print $module->getUrl("js/datatables.min.js", false, true) ?>"></script>
-    <!--    <link href="--><?php //print $module->getUrl('css/datatables.min.css', false, true)
-    ?><!--"  rel="stylesheet" type="text/css" media="screen,print"/>-->
+
     <style><?php echo $module->dumpResource('css/datatables.min.css'); ?></style>
 
 
@@ -465,25 +464,25 @@ function renderSummaryTableRows($row_data) {
 <table class="smry_table">
   <tr>
     <th class="smry_header">Counts</th>
-    <th class="smry_header_formula" style="width:30%">Formula</th>
+    <th class="smry_header_formula" style="width:40%">Formula</th>
     <th class="smry_header">All Participants</th>
-    <th class="smry_header">Exclude rows with MISSING end date</th>
+    <th class="smry_header">Exclude rows with <br>MISSING end date</th>
   </tr>
   <tr>
     <td class="tg-0lax">Count of Participants</td>
-    <td class="smry_formula">count('Participants)</td>
+    <td class="smry_formula">count('Participants')</td>
     <td class="smry_ct"><?php print $count_participant ?></td>
     <td class="smry_ct"><?php print $filtered_count_participant ?></td>
   </tr>
   <tr>
     <td class="tg-0lax">Sum of Capped Attendance</td>
-    <td class="smry_formula">Sum('Count of Attendance') - constrained by weekly cap, start date and end/current date</td>
+      <td class="smry_formula">Sum('Count of Attendance') <br><i>-- constrained by weekly cap, start date and end/current date</i></td>
     <td class="smry_ct"><?php print $sum_weekly_adherence ?></td>
     <td class="smry_ct"><?php print $filtered_sum_weekly_adherence ?></td>
   </tr>
   <tr>
     <td class="tg-0lax">Sum of Expected Attendance</td>
-    <td class="smry_formula">Sum('Expected Attendance') - Considered Weeks * Multiplier</td>
+      <td class="smry_formula">Sum('Expected Attendance') <br><i>-- Considered Weeks * Multiplier</i></td>
     <td class="smry_ct"><?php print $sum_expected_adherence ?></td>
     <td class="smry_ct"><?php print $filtered_sum_expected_adherence ?></td>
   </tr>
@@ -556,5 +555,4 @@ function renderSummaryTableRows($row_data) {
 
     } );
 </script>
-
 

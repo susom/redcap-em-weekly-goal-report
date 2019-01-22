@@ -135,7 +135,9 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             }
         }
 
-        return $date_year.$date_week;
+        //pad the week with 0
+        $date_week_padded = str_pad($date_week, 2, '0', STR_PAD_LEFT);
+        return $date_year.$date_week_padded;
 
     }
 
