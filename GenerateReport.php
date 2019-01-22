@@ -229,7 +229,7 @@ foreach ($participants as $participant) {
 
 }
 
-//$module->emDebug($table_data, "table DATA");
+//$module->emDebug($table_data, "table DATA"); exit;
 
 $sum_weekly_adherence = array_sum(array_column($table_data,'count'));
 $sum_expected_adherence = array_sum(array_column($table_data,'expected_attendance'));
@@ -238,6 +238,18 @@ $count_participant = count($table_data);
 $adherence_70_percent = sprintf("%.2f%%", ($sum_70_adherence/$count_participant) * 100);
 $adherence_weekly_percent = sprintf("%.2f%%", ($sum_weekly_adherence/$sum_expected_adherence) * 100);
 
+//repeat that set of counts EXCLUDING rows where end_date is missing
+//get table with non-empty end_date filed
+$filtered_table_data = array_filter($table_data, function($arrayValue)  { return !empty($arrayValue['end_date']); } );
+//$module->emDebug($table_data_has_end, "table DATA"); exit;
+
+
+$filtered_sum_weekly_adherence = array_sum(array_column($filtered_table_data,'count'));
+$filtered_sum_expected_adherence = array_sum(array_column($filtered_table_data,'expected_attendance'));
+$filtered_sum_70_adherence = array_sum(array_column($filtered_table_data,'70_adherence'));
+$filtered_count_participant = count($filtered_table_data);
+$filtered_adherence_70_percent = sprintf("%.2f%%", ($filtered_sum_70_adherence/$filtered_count_participant) * 100);
+$filtered_adherence_weekly_percent = sprintf("%.2f%%", ($filtered_sum_weekly_adherence/$filtered_sum_expected_adherence) * 100);
 
 //$module->emDebug($table_data, "ALL TABLE DATA");
 
@@ -259,7 +271,6 @@ $table_header = array(
     "70% Weekly Adherence",
     "5 Week Count of Attendance",
     "5 Week Adherence" );
-
 
 /**
  * Sum the capped attendance from start to current date
@@ -451,34 +462,50 @@ function renderSummaryTableRows($row_data) {
             <h4> &bull; Reported future vacation days.</h4>
         <?php } ?>
 
-        <table>
-            <tr>
-                <td>Count of Participants:</td>
-                <td>  <?php print $count_participant ?></td>
-            </tr>
-3
-            <tr>
-                <td>Sum of capped attendance (all participants):</td>
-                <td>  <?php print $sum_weekly_adherence ?></td>
-            </tr>
-            <tr>
-                <td>Sum of expected attendance (all participants):</td>
-                <td>   <?php print $sum_expected_adherence ?> </td>
-            </tr>
-            <tr>
-                <td> Average Weekly Adherence:</td>
-                <td>  <?php print $adherence_weekly_percent ?></td>
-            </tr>
-
-            <tr>
-                <td> Count of participants with 70% Weekly Adherence:</td>
-                <td>  <?php print $sum_70_adherence ?></td>
-            </tr>
-            <tr>
-                <td> Percent of participants with 70% Weekly Adherence :</td>
-                <td>  <?php print $adherence_70_percent ?> </td>
-            </tr>
-        </table>
+<table class="smry_table">
+  <tr>
+    <th class="smry_header">Counts</th>
+    <th class="smry_header_formula" style="width:30%">Formula</th>
+    <th class="smry_header">All Participants</th>
+    <th class="smry_header">Exclude rows with MISSING end date</th>
+  </tr>
+  <tr>
+    <td class="tg-0lax">Count of Participants</td>
+    <td class="smry_formula">count('Participants)</td>
+    <td class="smry_ct"><?php print $count_participant ?></td>
+    <td class="smry_ct"><?php print $filtered_count_participant ?></td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">Sum of Capped Attendance</td>
+    <td class="smry_formula">Sum('Count of Attendance') - constrained by weekly cap, start date and end/current date</td>
+    <td class="smry_ct"><?php print $sum_weekly_adherence ?></td>
+    <td class="smry_ct"><?php print $filtered_sum_weekly_adherence ?></td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">Sum of Expected Attendance</td>
+    <td class="smry_formula">Sum('Expected Attendance') - Considered Weeks * Multiplier</td>
+    <td class="smry_ct"><?php print $sum_expected_adherence ?></td>
+    <td class="smry_ct"><?php print $filtered_sum_expected_adherence ?></td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">Average Weekly Adherence</td>
+    <td class="smry_formula">Average('Capped Adherence')</td>
+    <td class="smry_ct"><?php print $adherence_weekly_percent ?></td>
+    <td class="smry_ct"><?php print $filtered_adherence_weekly_percent ?></td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">Count of participants with 70% Weekly Adherence</td>
+    <td class="smry_formula">Count('70% Weekly Adherence' = YES)</td>
+    <td class="smry_ct"><?php print $sum_70_adherence ?></td>
+    <td class="smry_ct"><?php print $filtered_sum_70_adherence ?></td>
+  </tr>
+  <tr>
+    <td class="tg-0lax">Percent of participants with 70% Weekly Adherence</td>
+    <td class="smry_formula">Count with 70% Adherence / Count of Participants</td>
+    <td class="smry_ct"><?php print $adherence_70_percent ?></td>
+    <td class="smry_ct"><?php print $filtered_adherence_70_percent ?></td>
+  </tr>
+</table>
         <div id="choices">
             <form action="#" method="post">
                 <div><input type="checkbox" name="withdrawn" id="withdrawn" value="true">Remove withdrawn participants
@@ -506,6 +533,11 @@ function renderSummaryTableRows($row_data) {
 </body>
 
 <script type = "text/javascript">
+    var insertHtml = function (selector, html) {
+        var targetElem = document.querySelector(selector);
+        targetElem.innerHTML = html;
+    };
+
     $(document).ready(function() {
         $('#summary').DataTable( {
             dom: 'Bfrtip',
