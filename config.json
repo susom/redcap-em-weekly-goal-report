@@ -49,6 +49,24 @@
       "type": "checkbox"
     },
     {
+      "key": "main_pid",
+      "name": "MAIN PROJECT: project id of the main project",
+      "required":true,
+      "type": "project-id"
+    },
+    {
+      "key": "coordinator_field",
+      "name": "Primary Coordinator Field: field where the primary coordinator is recorded",
+      "required":true,
+      "type": "text"
+    },
+    {
+      "key": "coordinator_field_event",
+      "name": "Primary Coordinator Field Event: Event where the primary coordinator is recorded",
+      "required":true,
+      "type": "text"
+    },
+    {
       "key": "survey_pid",
       "name": "SURVEY_PID: project id of the survey project",
       "required":true,

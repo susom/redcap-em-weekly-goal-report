@@ -335,6 +335,80 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
         return $amended_counts;
     }
 
+
+    /**
+     * Lookup the decode of the coordinator dropdown from the data dictionary and return
+     * list of coordinators by pariticpant id
+     *
+     * @return array
+     * @throws \Exception
+     */
+    function getCoordinatorDecoded() {
+        $coord_field       = $this->getProjectSetting('coordinator_field');
+        //$coord_field_event = $this->getProjectSetting('coordinator_field_event');
+        $coord_field_pid   = $this->getProjectSetting('main_pid');
+        //$coord_field_event_id = empty($coord_field_event) ? NULL : $this->getEventIdFromName($coord_field_pid,$coord_field_event);
+
+        $params = array(
+            'project_id'    => $coord_field_pid,
+            'fields'        => array($coord_field),
+            'events'        => $coord_field_event
+            //'return_format' => 'json'
+        );
+
+        $results = REDCap::getData($params);
+        //$results  = json_decode($q, true);
+
+        //get the decode for the coordinator field
+        $dict = REDCap::getDataDictionary($coord_field_pid, 'array', false, $coord_field);
+        $coord_string = $dict[$coord_field]['select_choices_or_calculations'];
+        $coord_exploded = explode('|',$coord_string);
+        foreach ($coord_exploded as $k => $v) {
+            $e = explode(',', $v);
+
+            $coord_decode[trim($e[0])] =$e[1];
+        }
+
+        $decoded = array();
+
+        $re = '/^(32113-)?(?\'id\'\w*)/m';
+
+        foreach ($results as $id => $event) {
+            //STRONGD is prefixed, but IMPACT is not.
+            //removed the prefix for id ('32113-')
+            preg_match_all($re, $id, $matches, PREG_SET_ORDER, 0);
+            $stripped_id = $matches[0]['id'];
+            //$this->emDebug($stripped_id, $id);
+            //$decoded[$stripped_id] = $coord_decode[$event[$coord_field_event_id][$coord_field]];
+            $decoded[$stripped_id] = $coord_decode[(current($event))[$coord_field]];
+        }
+
+        return $decoded;
+
+
+    }
+
+    /**
+     * DELETE NOT USED
+     * @param $project_id
+     * @param $event_name
+     * @return |null
+     * @throws \Exception
+     */
+     static function getEventIdFromName($project_id, $event_name) {
+        //Plugin::log($event_name, "DEBUG", "Getting event for project ".$project_id);
+
+        if (empty($event_name)) return NULL;
+        $thisProj = new \Project($project_id,false);
+        $thisProj->loadEventsForms();
+        $event_id_names = $thisProj->getUniqueEventNames();
+
+        //Plugin::log($event_id_names, "DEBUG", "Getting event id names for project ".$project_id);
+
+        $event_names_id = array_flip($event_id_names);
+        return isset($event_names_id[$event_name]) ? $event_names_id[$event_name] : NULL;
+    }
+
     /**
      * Returns all surveys for a given record id
      *

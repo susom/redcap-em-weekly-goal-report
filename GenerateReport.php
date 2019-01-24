@@ -32,6 +32,8 @@ $vacation = (isset($_POST['vacation'])) ? true : null;
 $illness = (isset($_POST['illness'])) ? true : null;
 $future_vacation = (isset($_POST['future_vacation'])) ? true : null;
 
+
+
 //convert the $cfg into the version like the em
 /**
  * (
@@ -123,6 +125,8 @@ $counts= $module->calcCappedCount($survey_data, $participant_data, $cfg);
 $counts = $module->countWithAbsence($counts, $excluded_weeks);
 //$module->emDebug($counts, "ALL COUNTS"); exit;
 
+$coordinators = $module->getCoordinatorDecoded();
+
 
 //assemble table to display
 $table_data = array();
@@ -191,6 +195,7 @@ foreach ($participants as $participant) {
     $five_wk_adherence = lastFiveAdherence($counts[$participant]);
 
     //$module->emDebug($participant, "PARTICIPANT DATA".$cfg['WITHDRAWN_STATUS_FIELD'].'___1'.$cfg['GROUP_FIELD']);
+    $table_data[$participant]['coordinator']                  = $coordinators[$participant];
     $table_data[$participant][$cfg['WITHDRAWN_STATUS_FIELD']] = $participant_data[$participant][$cfg['WITHDRAWN_STATUS_FIELD'].'___1'];
     $table_data[$participant][$cfg['GROUP_FIELD']]            = $group;
     $table_data[$participant][$cfg['START_DATE_FIELD']]       = $start_date;
@@ -257,6 +262,7 @@ $filtered_adherence_weekly_percent = sprintf("%.2f%%", ($filtered_sum_weekly_adh
 
 $table_header = array(
     "Participant",
+    "Coordinator",
     "Withdraw Status",
     "Arm",
     "Start Date",
