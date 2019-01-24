@@ -361,6 +361,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
 
         //get the decode for the coordinator field
         $dict = REDCap::getDataDictionary($coord_field_pid, 'array', false, $coord_field);
+
         $coord_string = $dict[$coord_field]['select_choices_or_calculations'];
         $coord_exploded = explode('|',$coord_string);
         foreach ($coord_exploded as $k => $v) {
@@ -371,18 +372,29 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
 
         $decoded = array();
 
-        $re = '/^(32113-)?(?\'id\'\w*)/m';
+        //$re = '/^(32113-)?(?\'id\'\w*)/m';
+        $re = '/^(?\'grp\'32113-|2151-)?(?\'id\'\w*)/m';
 
         foreach ($results as $id => $event) {
             //STRONGD is prefixed, but IMPACT is not.
             //removed the prefix for id ('32113-')
             preg_match_all($re, $id, $matches, PREG_SET_ORDER, 0);
-            $stripped_id = $matches[0]['id'];
-            //$this->emDebug($stripped_id, $id);
-            //$decoded[$stripped_id] = $coord_decode[$event[$coord_field_event_id][$coord_field]];
-            $decoded[$stripped_id] = $coord_decode[(current($event))[$coord_field]];
+
+            //it turns out that IMPACT uses the whole ID and STRONGD cuts off prefix
+            if (isset($matches[0]['grp'])  &&  ($matches[0]['grp'] == '2151-')) {
+                //it's IMPACT so use the whole ID
+                $fixed_id = $id;
+            } else {
+                //its STRONGD so strip off the prefix
+
+                $fixed_id = $matches[0]['id'];
+                $this->emDebug($fixed_id, $id);
+                //$decoded[$stripped_id] = $coord_decode[$event[$coord_field_event_id][$coord_field]];
+            }
+            $decoded[$fixed_id] = $coord_decode[(current($event))[$coord_field]];
         }
 
+        //$this->emDebug($decoded); exit;
         return $decoded;
 
 
