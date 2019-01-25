@@ -24,6 +24,11 @@
         "name": "Generate Report for Weekly Goals",
         "icon": "gear",
         "url": "GenerateReport.php"
+      },
+      {
+        "name": "Generate Report by Day",
+        "icon": "gear",
+        "url": "GenerateDailyReport.php"
       }
     ]
   },

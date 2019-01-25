@@ -305,6 +305,8 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
                 $capped[$participant][$c_yrweek]['capped_count'] = $capped_count;
                 $capped[$participant][$c_yrweek]['adhered'] = ($raw_count) >= $cap ? 1: 0;
             }
+
+
         }
 
         return $capped;
@@ -497,6 +499,52 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
         return $r;
     }
 
+    /**
+     * @param $valid_day_number_array
+     * @param $survey_data
+     * @param $start_date
+     * @return array
+     */
+    function getAttendedDayNumbers($survey_data, $start_date, $end_date) {
+                                       //$start_field, $start_field_event, $valid_day_number_array) {
+//        $start_date = StaticUtils::getFieldValue($pk, $project_id, $start_field, $start_field_event);
+        //$this->emDebug($survey_data, "VALID DAY NUMBERS"); exit;
+        $valid_days = array();
+
+
+        //iterate over each day from start to enddate
+        $interval = new \DateInterval('P1D');
+        $period   = new \DatePeriod(new DateTime($start_date), $interval,new DateTime($end_date));
+
+        foreach ($period as $dt) {
+
+            $date = $dt->format('Y-m-d');
+
+            if ( isset($survey_data[$date]) ) {
+                $c_yrweek = $this->getYearWeekShiftedSunday($dt);
+                $valid_days[$date]['STATUS'] = isset($survey_data[$date]) ? "1" : "-1";
+                $valid_days[$date]['DAY_NUMBER'] = $c_yrweek;
+            }
+
+        }
+        //$this->emDebug($valid_days, "VALID DAY NUMBERS 2"); exit;
+
+        return $valid_days;
+    }
+
+    /**
+     * Gets the date based on a start_date and days offset
+     *
+     * @param $start_date
+     * @param $day
+     * @param string $format
+     * @return string
+     */
+    function getDateFromDayNumber($start_date, $day, $format = "Y-m-d") {
+        $this_dt = new \DateTime($start_date);
+        $this_dt->modify("+$day day");
+        return $this_dt->format($format);
+    }
 
     /**
      * @param $surveys
@@ -530,7 +578,22 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
 
     }
 
+    /**
+     * @param $survey_fk_field
+     * @param $all_surveys
+     * @return array
+     */
+    static function getUniqueParticipants($survey_fk_field, $all_surveys) {
+        //return unique single level array
+        $pids = array();
+        foreach ($all_surveys as $h) {
+            $pids[] = $h[$survey_fk_field];
+        }
+        $unique_pids = array_unique($pids);
 
+        return $unique_pids;
+
+    }
 
 
     function startBootstrapPage($title, $header = '') {
