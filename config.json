@@ -21,12 +21,12 @@
     ],
     "project": [
       {
-        "name": "Generate Report for Weekly Goals",
+        "name": "WeeklyReport: Generate Report for Weekly Goals",
         "icon": "gear",
         "url": "GenerateReport.php"
       },
       {
-        "name": "Generate Report by Day",
+        "name": "WeeklyReport: Generate Report by Day",
         "icon": "gear",
         "url": "GenerateDailyReport.php"
       }
