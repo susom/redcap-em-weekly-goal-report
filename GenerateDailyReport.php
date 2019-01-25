@@ -59,10 +59,10 @@ if ($end != '') {
     $portal_data = StaticUtils::makeFieldArrayKey($portal_data_orig, REDCap::getRecordIdField());
 
     //4. reorganize so that it's keyed by id - survey_date
-    $surveys_by_id = WeeklyGoalReport::arrangeSurveyByID($surveys, $portal_data, $cfg['START_DATE_FIELD'],
+    $surveys_by_id = $module->arrangeSurveyByID($surveys, $portal_data, $cfg['START_DATE_FIELD'],
         $cfg['SURVEY_PK_FIELD'], $cfg['SURVEY_FK_FIELD'], $cfg['SURVEY_DATE_FIELD'], $cfg['SURVEY_DAY_NUMBER_FIELD'],
         $cfg['SURVEY_FORM_NAME'].'_complete');
-    //$module->emDebug($surveys_by_id, "ALL SURVEYS by ID" . $cfg['SURVEY_FK_FIELD']); exit;
+//    $module->emDebug($surveys_by_id, "ALL SURVEYS by ID" . $cfg['SURVEY_FK_FIELD']); exit;
 
 
     //$survey_data = WeeklyGoalReport::arrangeSurveyByIDWeek($surveys, $cfg['SURVEY_FK_FIELD'], $cfg['SURVEY_DATE_FIELD']);
@@ -77,8 +77,9 @@ if ($end != '') {
         $table_data[$participant] = $module->getAttendedDayNumbers(
             $surveys_by_id[$participant],
             $portal_data[$participant][$cfg['START_DATE_FIELD']],
-            $portal_data[$participant][$cfg['END_DATE_FIELD']]
-            );
+            $portal_data[$participant][$cfg['END_DATE_FIELD']],
+            $participant
+        );
     }
 
     //$module->emDebug($table_data); exit;
@@ -187,6 +188,11 @@ function renderSummaryTableRows($row_data, $date_window) {
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
 
+    <!-- Include DataTables for Bootstrap -->
+    <script src="<?php print $module->getUrl("js/datatables.min.js", false, true) ?>"></script>
+
+    <style><?php echo $module->dumpResource('css/datatables.min.css'); ?></style>
+
     <!-- Bootstrap Date-Picker Plugin -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/css/bootstrap-datepicker3.css"/>
@@ -239,7 +245,14 @@ function renderSummaryTableRows($row_data, $date_window) {
 <script type = "text/javascript">
 
     $(document).ready(function(){
-        console.log("hello");
+
+        $('#summary').DataTable( {
+            dom: 'Bfrtip',
+            buttons: [
+                'copy', 'csv', 'excel', 'pdf', 'print'
+            ]
+        } );
+
         $('#datetimepicker6').datepicker({
             format: 'yyyy-mm-dd'
 

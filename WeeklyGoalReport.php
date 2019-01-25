@@ -505,7 +505,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
      * @param $start_date
      * @return array
      */
-    function getAttendedDayNumbers($survey_data, $start_date, $end_date) {
+    function getAttendedDayNumbers($survey_data, $start_date, $end_date, $participant) {
                                        //$start_field, $start_field_event, $valid_day_number_array) {
 //        $start_date = StaticUtils::getFieldValue($pk, $project_id, $start_field, $start_field_event);
         //$this->emDebug($survey_data, "VALID DAY NUMBERS"); exit;
@@ -527,7 +527,6 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             }
 
         }
-        //$this->emDebug($valid_days, "VALID DAY NUMBERS 2"); exit;
 
         return $valid_days;
     }
@@ -557,7 +556,7 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
      * @param $survey_form_name_complete
      * @return array
      */
-    static function arrangeSurveyByID($surveys, $portal_data, $portal_start_date_field,
+    function arrangeSurveyByID($surveys, $portal_data, $portal_start_date_field,
                                       $survey_pk_field, $survey_fk_field, $survey_date_field,
                                       $survey_day_number_field, $survey_form_name_complete) {
         $arranged = array();
@@ -566,13 +565,18 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             $id = $c[$survey_fk_field];
             $survey_date = $c[$survey_date_field];
 
+
             $arranged[$id][$survey_date] = array(
                 "START_DATE"   => $portal_data[$id][$portal_start_date_field],
                 "RECORD_NAME"  => $c[$survey_pk_field],
                 "DAY_NUMBER"   => $c[$survey_day_number_field],
                 "STATUS"       => $c[$survey_form_name_complete]
             );
+
         }
+
+
+
 
         return $arranged;
 
