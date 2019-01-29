@@ -508,6 +508,8 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
     function getAttendedDayNumbers($survey_data, $start_date, $end_date, $participant) {
                                        //$start_field, $start_field_event, $valid_day_number_array) {
 //        $start_date = StaticUtils::getFieldValue($pk, $project_id, $start_field, $start_field_event);
+
+
         //$this->emDebug($survey_data, "VALID DAY NUMBERS"); exit;
         $valid_days = array();
 
@@ -527,6 +529,9 @@ class WeeklyGoalReport extends \ExternalModules\AbstractExternalModule {
             }
 
         }
+
+        $valid_days['start'] = $start_date;
+        $valid_days['end'] = $end_date;
 
         return $valid_days;
     }

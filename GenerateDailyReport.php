@@ -53,8 +53,17 @@ if ($end != '') {
     $participants = WeeklyGoalReport::getUniqueParticipants($cfg['SURVEY_FK_FIELD'], $surveys);
 
     //3. Get survey portal data from main project
-    $portal_fields = array(REDCap::getRecordIdField(),$cfg['START_DATE_FIELD']);
-    $portal_data_orig = StaticUtils::getFieldValues($project_id, $portal_fields, $cfg['START_DATE_EVENT']);
+    $portal_fields = array(REDCap::getRecordIdField(),$cfg['START_DATE_FIELD'],$cfg['END_DATE_FIELD']);
+    $portal_params = array(
+        'project_id'    => $project_id,
+        'return_format' => 'json',
+        'fields'        =>$portal_fields,
+        'events'        => $cfg['PARTICIPANT_EVENT_ARM_NAME']
+    );
+     $q = REDCap::getData($portal_params);
+     $portal_data_orig = json_decode($q, true);
+
+    //$portal_data_orig = StaticUtils::getFieldValues($project_id, $portal_fields, $cfg['START_DATE_EVENT'], $cfg['PARTICIPANT_EVENT_ARM_NAME']);
     //rearrange so that the id is the key
     $portal_data = StaticUtils::makeFieldArrayKey($portal_data_orig, REDCap::getRecordIdField());
 
@@ -82,8 +91,9 @@ if ($end != '') {
         );
     }
 
-    //$module->emDebug($table_data); exit;
-    $table_header = array_merge(array("Participant"), $dates_day);
+
+    //$module->emDebug($portal_data); exit;
+    $table_header = array_merge(array("Participant", "Start", "End"), $dates_day);
 
 
 }
@@ -123,17 +133,25 @@ function renderHeaderRow($header = array(), $tag) {
     return $row;
 }
 
+/**
+ * @param $row_data
+ * @param $date_window  window specified in UI
+ * @return string
+ */
 function renderSummaryTableRows($row_data, $date_window) {
 
+    global $module;
     $rows = '';
 
     foreach ($row_data as $participant => $dates) {
         $rows .= '<tr><td>' . $participant. '</td>';
+        $rows .= '<td>'.$dates['start'].'</td>';
+        $rows .= '<td>'.$dates['end'].'</td>';
 
-        foreach ($date_window as $required_date) {
+        foreach ($date_window as $display_date) {
 
-            $status = $dates[$required_date]['STATUS'];
-            $day_num = $dates[$required_date]['DAY_NUMBER'];
+            $status = $dates[$display_date]['STATUS'];
+            $day_num = $dates[$display_date]['DAY_NUMBER'];
 
             $status_unscheduled = '';
             $status_blue = '<button type="button" class="btn btn-info btn-circle"><i class="glyphicon"></i><b>'.$day_num.'</b></button>';
@@ -176,26 +194,53 @@ function renderSummaryTableRows($row_data, $date_window) {
     <title><?php echo $module->getModuleName()?></title>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
 
-    <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" type="text/css" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="<?php print $module->getUrl("favicon/stanford_favicon.ico",false,true) ?>">
 
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="<?php print $module->getUrl("js/jquery-3.2.1.min.js",false,true) ?>"></script>
+    <!--script src="<?php print $module->getUrl("js/jquery-3.2.1.min.js",false,true) ?>"></script-->
 
     <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <!--
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
-
+-->
     <!-- Include DataTables for Bootstrap -->
+    <!--
     <script src="<?php print $module->getUrl("js/datatables.min.js", false, true) ?>"></script>
-
     <style><?php echo $module->dumpResource('css/datatables.min.css'); ?></style>
+    -->
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.18/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.4/js/dataTables.buttons.min.js"></script>
+    <!--script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.4/js/buttons.bootstrap4.min.js"></script-->
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.4/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.5/js/dataTables.fixedColumns.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/fixedheader/3.1.4/js/dataTables.fixedHeader.min.js"></script>
+
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" type="text/css" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!--
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/dataTables.bootstrap4.min.css"/>
+    -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.5.4/css/buttons.bootstrap4.min.css"/>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedcolumns/3.2.5/css/fixedColumns.bootstrap4.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedheader/3.1.4/css/fixedHeader.bootstrap4.min.css"/>
+
+
 
     <!-- Bootstrap Date-Picker Plugin -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/css/bootstrap-datepicker3.css"/>
+
+    <style><?php echo $module->dumpResource('css/weeklygoal.css'); ?></style>
+
 
 
     <!-- Add local css and js for module -->
@@ -249,8 +294,15 @@ function renderSummaryTableRows($row_data, $date_window) {
         $('#summary').DataTable( {
             dom: 'Bfrtip',
             buttons: [
-                'copy', 'csv', 'excel', 'pdf', 'print'
-            ]
+                'copy', 'csv', 'excel', 'pdf'
+            ],
+            scrollY:        "600px",
+            scrollX:        true,
+            scrollCollapse: true,
+            paging:         false,
+            fixedColumns:   {
+                leftColumns: 3
+            }
         } );
 
         $('#datetimepicker6').datepicker({
@@ -266,6 +318,8 @@ function renderSummaryTableRows($row_data, $date_window) {
 
     });
 
+
 </script>
+
 
 
