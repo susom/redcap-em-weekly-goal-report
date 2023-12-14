@@ -44,8 +44,10 @@ class StaticUtils {
         global $Proj;
         $thisProj = empty($project_id) ? $Proj : new Project($project_id);
 
+        $data_table = method_exists('\REDCap', 'getDataTable') ? \REDCap::getDataTable($thisProj->project_id) : "redcap_data";
+
         // Query data table for record
-        $sql = "select 1 from redcap_data where project_id = ".$thisProj->project_id." and field_name = '{$thisProj->table_pk}'
+        $sql = "select 1 from $data_table where project_id = ".$thisProj->project_id." and field_name = '{$thisProj->table_pk}'
 			and record = '" . prep($record) . "'";
         if (is_numeric($arm_num) && isset($thisProj->events[$arm_num])) {
             $sql .= " and event_id in (" . prep_implode(array_keys($thisProj->events[$arm_num]['events'])) . ")";
